@@ -108,14 +108,18 @@ int lowest_match(struct term *terms, int nterms, char *substr)
     int len = strlen(substr);
     int left = 0;
     int right = nterms; 
-    while (left <= right)
+    while (left < right)
     { 
         int mid = floor((right+left)/2);
+        if (mid == 0)
+        {
+            return mid;
+        }
         char mid_term[len];
         char before_mid[len];
         slice(mid_term, (terms + mid)->term, len);
         slice(before_mid, (terms + mid - 1)->term, len);
-        if (mid == 0 || (strcmp(mid_term, substr) == 0 && strcmp(before_mid, substr) != 0))
+        if (strcmp(mid_term, substr) == 0 && strcmp(before_mid, substr) != 0)
         {
             return mid;
         }
@@ -130,6 +134,7 @@ int lowest_match(struct term *terms, int nterms, char *substr)
             left = mid;
         }
     }
+    return -1;
 }
 
 int highest_match(struct term *terms, int nterms, char *substr)
@@ -137,14 +142,19 @@ int highest_match(struct term *terms, int nterms, char *substr)
     int len = strlen(substr);
     int left = 0;
     int right = nterms; 
-    while (left <= right)
+    while (left < right)
     {
         int mid = floor((right+left)/2);
         char mid_term[len];
         char after_mid[len];
         slice(mid_term, (terms + mid)->term, len);
         slice(after_mid, (terms + mid + 1)->term, len);
-        if (mid == nterms || (strcmp(mid_term, substr) == 0 && strcmp(after_mid, substr) != 0))
+        if (mid == (nterms - 1) && strcmp(mid_term, substr) == 0 && strcmp(after_mid, substr) == 0)
+        {
+            return nterms;
+        }
+
+        if (strcmp(mid_term, substr) == 0 && strcmp(after_mid, substr) != 0)
         {
             return mid;
         }
@@ -159,6 +169,7 @@ int highest_match(struct term *terms, int nterms, char *substr)
             right = mid;
         }
     }
+    return -1;
 }
 
 int term_comp2(const void* a, const void* b)
@@ -184,5 +195,29 @@ void autocomplete(struct term **answer, int *n_answer, struct term *terms, int n
     qsort(*answer, *n_answer, sizeof(term), term_comp2); 
 }
 
+void print_struct(term term1)
+{
+    printf("City name: %s\n", term1.term);
+    printf("Weight: %f\n", term1.weight);
+}
 
+void print_block(term* p_s, int n_terms)
+{
+    for (int i = 0; i < n_terms; i++)
+    {
+        print_struct(*(p_s + i));
+    }
+}
+
+int main (void)
+{
+    term* haha;
+    int xd;
+    char *loc = "C:/Users/alecy/Documents/School/UofTears/Year 1/Semester 2/Algorithms and Data Structures/Projects/p1/cities.txt";
+    term* answer;
+    int n_ans;
+    read_in_terms(&haha, &xd, loc);
+    autocomplete(&answer, &n_ans, haha, xd, "\'");
+    print_block(answer, n_ans);
+}
 
