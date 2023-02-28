@@ -99,7 +99,7 @@ void read_in_terms(struct term **terms, int *pnterms, char *filename)
 
 void slice(char* dest, char* srce, int size)
 {
-    memset(dest, '\0', sizeof(dest));
+    memset(dest, '\0', size+1);
     strncpy(dest, srce, size);
 }
 
@@ -108,6 +108,9 @@ int lowest_match(struct term *terms, int nterms, char *substr)
     int len = strlen(substr);
     int left = 0;
     int right = nterms; 
+    int count = 0;
+    char mid_term[len+1];
+    char before_mid[len+1];
     while (left < right)
     { 
         int mid = floor((right+left)/2);
@@ -115,8 +118,6 @@ int lowest_match(struct term *terms, int nterms, char *substr)
         {
             return mid;
         }
-        char mid_term[len];
-        char before_mid[len];
         slice(mid_term, (terms + mid)->term, len);
         slice(before_mid, (terms + mid - 1)->term, len);
         if (strcmp(mid_term, substr) == 0 && strcmp(before_mid, substr) != 0)
@@ -133,6 +134,11 @@ int lowest_match(struct term *terms, int nterms, char *substr)
         {
             left = mid;
         }
+        count++;
+        if (count > log2(nterms) + 1)
+        {
+            return -1;
+        }
     }
     return -1;
 }
@@ -142,11 +148,12 @@ int highest_match(struct term *terms, int nterms, char *substr)
     int len = strlen(substr);
     int left = 0;
     int right = nterms; 
+    int count = 0;
     while (left < right)
     {
         int mid = floor((right+left)/2);
-        char mid_term[len];
-        char after_mid[len];
+        char mid_term[len+1];
+        char after_mid[len+1];
         slice(mid_term, (terms + mid)->term, len);
         slice(after_mid, (terms + mid + 1)->term, len);
         if (mid == (nterms - 1) && strcmp(mid_term, substr) == 0 && strcmp(after_mid, substr) == 0)
@@ -168,6 +175,11 @@ int highest_match(struct term *terms, int nterms, char *substr)
         {
             right = mid;
         }
+        count++;
+        if (count > log2(nterms) + 1)
+        {
+            return -1;
+        }   
     }
     return -1;
 }
@@ -176,8 +188,18 @@ int term_comp2(const void* a, const void* b)
 {
     term* term_a = (term*)a;
     term* term_b = (term*)b;
-
-    return term_b->weight - term_a->weight;
+    if (term_b->weight > term_a->weight)
+    {
+        return 1;
+    }
+    else if (term_b->weight < term_a->weight)
+    {
+        return -1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 void autocomplete(struct term **answer, int *n_answer, struct term *terms, int nterms, char *substr)
@@ -185,6 +207,10 @@ void autocomplete(struct term **answer, int *n_answer, struct term *terms, int n
     int low_ind = lowest_match(terms, nterms, substr);
     int high_ind = highest_match(terms, nterms, substr);
     *n_answer = high_ind - low_ind + 1;
+    if (low_ind == -1 || high_ind == -1)
+    {
+        *n_answer == 0;
+    }
     *answer = (term*)malloc(*n_answer * sizeof(term));
     for (int i = 0; i < *n_answer; i++)
     {
@@ -207,17 +233,5 @@ void print_block(term* p_s, int n_terms)
     {
         print_struct(*(p_s + i));
     }
-}
-
-int main (void)
-{
-    term* haha;
-    int xd;
-    char *loc = "C:/Users/alecy/Documents/School/UofTears/Year 1/Semester 2/Algorithms and Data Structures/Projects/p1/cities.txt";
-    term* answer;
-    int n_ans;
-    read_in_terms(&haha, &xd, loc);
-    autocomplete(&answer, &n_ans, haha, xd, "\'");
-    print_block(answer, n_ans);
 }
 
